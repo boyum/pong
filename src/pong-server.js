@@ -1,5 +1,4 @@
 const Pong = require('./pong');
-const Vector = require('./vector');
 
 /**
  * @param {Function} func

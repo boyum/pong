@@ -1,6 +1,6 @@
 const PlayerType = {
   LEFT: 0,
-  RIGHT: 0,
+  RIGHT: 1,
 };
 
 /**

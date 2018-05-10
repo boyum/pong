@@ -1,12 +1,11 @@
 const WebSocket = require('ws');
 const express = require('express');
+const PlayerType = require('./player-type');
 const {
   init,
   updateLeft,
   updateRight,
 } = require('./pong-server');
-const PlayerType = require('./player-type');
-const WsData = require('./ws-data');
 
 const server = express();
 
@@ -14,12 +13,24 @@ const wss = new WebSocket.Server({
   port: 8080,
 });
 
-const game = init(broadCastUpdates);
+const game = init({
+  afterUpdate: broadcastContext,
+  afterDraw: () => {},
+});
 const players = new Set();
 const playersReady = new Set();
+const serverContext = {
+  players: [],
+};
 
 wss.on('connection', ws => {
   players.add(ws);
+  serverContext.players.push({
+    ready: false,
+  });
+
+  broadcastContext({});
+
   if (players.size === 1) {
     send(ws, {
       message: 'You\'re player 1',
@@ -41,9 +52,7 @@ wss.on('connection', ws => {
 
     wss.clients.forEach(client => {
       client.on('message', m => {
-        console.log('m', m);
-        const wsData = JSON.parse(m.data);
-
+        const wsData = JSON.parse(m);
         if (game.running) {
           if (wsData.data.move) {
             if (wsData.data.playerType === PlayerType.LEFT) {
@@ -55,21 +64,27 @@ wss.on('connection', ws => {
         } else {
           if (wsData.data.ready === true) {
             playersReady.add(client);
-            console.log(client, 'ready');
 
-            if (playersReady.size === 2) {
-              game.start();
-              broadcast(wss.clients, {
-                message: 'Start game',
-                data: {
-                  startGame: true,
-                },
-              });
+            if (wsData.data.playerType > -1) {
+              serverContext.players[wsData.data.playerType].ready = true;
+
+              if (playersReady.size === 2) {
+                game.start();
+                broadcast(wss.clients, {
+                  message: 'Start game',
+                  data: {
+                    startGame: true,
+                  },
+                });
+              }
             }
           } else if (wsData.data.ready === false) {
             playersReady.delete(client);
+            serverContext.players[wsData.data.playerType].ready = false;
           }
         }
+
+        broadcastContext({});
       });
 
       client.on('close', (code, reason) => {
@@ -106,14 +121,19 @@ function send(client, data) {
 
 /**
  *
- *
- * @param {Vector[]} positions
+ * @param {Object} context
+ * @param {Vector[]} context.playerPos
+ * @param {Vector[]} context.playerVelocities
+ * @param {Vector} context.ballPos
+ * @param {Object} context.score
+ * @param {number} context.score.left
+ * @param {number} context.score.right
+ * @param {Object[]} context.players
+ * @param {boolean} context.players.ready
  */
-function broadCastUpdates(positions) {
+function broadcastContext(context) {
   broadcast(players, {
-    data: {
-      positions,
-    },
+    data: Object.assign(context, serverContext),
   });
 }
 

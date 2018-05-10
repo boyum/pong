@@ -4,13 +4,20 @@
 class Vector {
   /**
    * Creates an instance of Vector.
-   * @param {number} x
+   * @param {Object|number} x
+   * @param {number} x.x
+   * @param {number} x.y
    * @param {number} y
    * @memberof Vector
    */
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    if (typeof x === 'number') {
+      this.x = x;
+      this.y = y;
+    } else {
+      this.x = x.x;
+      this.y = x.y;
+    }
   }
 
   /**

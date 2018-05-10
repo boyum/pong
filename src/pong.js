@@ -1,4 +1,3 @@
-
 if (isNode()) {
   eval(`
     var PlayerType = require('./player-type');
@@ -24,9 +23,11 @@ class Pong {
    * @param {number} boardWidth
    * @param {number} boardHeight
    * @param {CanvasRenderingContext2D} ctx
-   * @param {Function} func
+   * @param {Object} functions
+   * @param {Function} functions.afterUpdate
+   * @param {Function} functions.afterDraw
    */
-  constructor(boardWidth, boardHeight, ctx, func) {
+  constructor(boardWidth, boardHeight, ctx, functions) {
     this.boardWidth = boardWidth;
     this.boardHeight = boardHeight;
     this.isServer = !Boolean(ctx);
@@ -53,7 +54,8 @@ class Pong {
       ]
     );
 
-    this.update = this.update.bind(this, func);
+    this.update = this.update.bind(this, functions.afterUpdate);
+    this.draw = this.draw.bind(this, functions.afterDraw);
   }
 
   /**
@@ -67,43 +69,61 @@ class Pong {
   }
   /**
    *
-   * @param {Function} func
+   * @param {Function} afterUpdate
    * @memberof Pong
    */
-  update(func) {
+  update(afterUpdate) {
     if (!this.running) {
       return;
     }
 
-    if (this.ballOutOfBounds()) {
-      this.ball.lastHitBy.score++;
-      this.ball.reset();
-    } else {
-      if (this.ballHitsLeftPlayer()) {
-        this.ball.bounce(
-          Wall.LEFT,
-          this.calculateBounceAngle(this.leftPlayer)
-        );
-      } else if (this.ballHitsRightPlayer()) {
-        this.ball.bounce(
-          Wall.RIGHT,
-          this.calculateBounceAngle(this.rightPlayer)
-        );
-      }
-    }
-
-    if (this.ballHitsCeiling()) {
-      this.ball.bounce(Wall.TOP);
-    } else if (this.ballHitsFloor()) {
-      this.ball.bounce(Wall.BOTTOM);
-    }
-
-    this.ball.update();
-    this.leftPlayer.update();
-    this.rightPlayer.update();
-
     if (this.isServer) {
-      func([this.leftPlayer.pos, this.rightPlayer.pos]);
+      if (this.ballOutOfBounds()) {
+        this.ball.lastHitBy.score++;
+        this.ball.reset();
+      } else {
+        if (this.ballHitsLeftPlayer()) {
+          this.ball.lastHitBy = this.leftPlayer;
+          this.ball.bounce(
+            Wall.LEFT,
+            this.calculateBounceAngle(this.leftPlayer)
+          );
+        } else if (this.ballHitsRightPlayer()) {
+          this.ball.lastHitBy = this.rightPlayer;
+          this.ball.bounce(
+            Wall.RIGHT,
+            this.calculateBounceAngle(this.rightPlayer)
+          );
+        }
+      }
+
+      if (this.ballHitsCeiling()) {
+        this.ball.bounce(Wall.TOP);
+      } else if (this.ballHitsFloor()) {
+        this.ball.bounce(Wall.BOTTOM);
+      }
+
+      this.ball.update();
+      this.leftPlayer.update();
+      this.rightPlayer.update();
+
+      if (afterUpdate) {
+        afterUpdate({
+          playerPositions: [
+            this.leftPlayer.pos,
+            this.rightPlayer.pos,
+          ],
+          playerVelocities: [
+            this.leftPlayer.velocity,
+            this.rightPlayer.velocity,
+          ],
+          ballPosition: this.ball.pos,
+          score: {
+            left: this.leftPlayer.score,
+            right: this.rightPlayer.score,
+          },
+        });
+      }
     } else {
       this.draw();
     }
@@ -112,23 +132,25 @@ class Pong {
   }
 
   /**
-   *
-   *
+   * @param {Function} afterDraw
    * @memberof Pong
    */
-  draw() {
+  draw(afterDraw) {
     this.ctx.fillStyle = '#333333';
     this.ctx.fillRect(0, 0, this.boardHeight, this.boardWidth);
 
     this.ball.draw(this.ctx);
     this.leftPlayer.draw(this.ctx);
     this.rightPlayer.draw(this.ctx);
+
+    if (afterDraw) {
+      afterDraw();
+    }
   }
 
   /**
-   *
-   *
    * @param {Player} player
+   * @param {boolean} left
    * @return {number}
    * @memberof Pong
    */
@@ -137,22 +159,20 @@ class Pong {
     const MAX_ANGLE = 90;
     const d = MAX_ANGLE - MIN_ANGLE;
 
-    const hitYPos = player.pos.y - this.ball.pos.y; - (player.height / 2);
+    const hitYPos = player.pos.y - this.ball.pos.y;
 
     if (hitYPos >= 0) {
       const percentage = hitYPos / player.height;
-      const res = (d * (1 - percentage)) + MIN_ANGLE;
+      const res = -(d * (1 - percentage)) + MIN_ANGLE;
       return res;
     } else {
       const percentage = -hitYPos / player.height;
-      const res = -(d * (1 - percentage)) + MIN_ANGLE;
+      const res = (d * (1 - percentage)) + MIN_ANGLE;
       return res;
     }
   }
 
   /**
-   *
-   *
    * @memberof Pong
    * @return {boolean}
    */
@@ -206,9 +226,6 @@ class Pong {
     } else {
       return player.pos.x <= this.ball.pos.x;
     }
-
-
-    //  return true;
   }
 
   /**
@@ -286,8 +303,9 @@ class Ball {
         break;
       case Wall.LEFT:
       case Wall.RIGHT:
+        const newY = (Math.sin(angle * Math.PI / 180));
         this.velocity.x *= -1;
-        this.velocity.y = (Math.sin(angle * 2 * Math.PI));
+        this.velocity.y = newY;
         break;
     }
   }
@@ -391,6 +409,9 @@ class Player {
    * @memberof Player
    */
   update() {
+    if (!isNode()) {
+      console.log('this', this);
+    }
     this.pos.add(this.velocity);
     this.pos.clampY(this.boardHeight - this.height / 2, this.height / 2);
   }
