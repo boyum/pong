@@ -4,17 +4,17 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "express": "^4.16.3",
-    "ws": "^5.1.1"
+    "express": "^4.18.2",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
-    "ava": "^1.4.1",
-    "eslint": "^5.16.0",
-    "eslint-config-google": "^0.9.1"
+    "eslint": "^8.39.0",
+    "eslint-config-google": "^0.14.0"
   },
   "scripts": {
-    "test": "ava",
-    "start": "node ./src/server.js"
+    "start": "node ./src/server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",

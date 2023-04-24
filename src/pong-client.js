@@ -1,7 +1,7 @@
 // const Pong = require('./pong');
 // /** @typedef {import("./pong.js")} Pong */
 
-const webSocket = new WebSocket('ws://localhost:8080');
+const webSocket = new WebSocket('ws://localhost:8081');
 let game;
 let player;
 let playerType = -1;

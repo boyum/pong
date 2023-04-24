@@ -35,23 +35,23 @@ class Pong {
     this.running = false;
 
     this.leftPlayer = new Player(
-      10,
-      boardHeight / 2,
-      boardHeight,
-      PlayerType.LEFT
+        10,
+        boardHeight / 2,
+        boardHeight,
+        PlayerType.LEFT
     );
     this.rightPlayer = new Player(
-      boardWidth - 20,
-      boardHeight / 2,
-      boardHeight,
-      PlayerType.RIGHT
+        boardWidth - 20,
+        boardHeight / 2,
+        boardHeight,
+        PlayerType.RIGHT
     );
     this.ball = new Ball(
-      boardWidth / 2,
-      boardHeight / 2, [
-        this.leftPlayer,
-        this.rightPlayer,
-      ]
+        boardWidth / 2,
+        boardHeight / 2, [
+          this.leftPlayer,
+          this.rightPlayer,
+        ]
     );
 
     this.update = this.update.bind(this, functions.afterUpdate);
@@ -85,14 +85,14 @@ class Pong {
         if (this.ballHitsLeftPlayer()) {
           this.ball.lastHitBy = this.leftPlayer;
           this.ball.bounce(
-            Wall.LEFT,
-            this.calculateBounceAngle(this.leftPlayer)
+              Wall.LEFT,
+              this.calculateBounceAngle(this.leftPlayer)
           );
         } else if (this.ballHitsRightPlayer()) {
           this.ball.lastHitBy = this.rightPlayer;
           this.ball.bounce(
-            Wall.RIGHT,
-            this.calculateBounceAngle(this.rightPlayer)
+              Wall.RIGHT,
+              this.calculateBounceAngle(this.rightPlayer)
           );
         }
       }
@@ -323,10 +323,10 @@ class Ball {
     }
 
     this.velocity = new Vector(
-      xSpeed,
-      0
-      // Math.random() * (2 * this.MAX_SPEED) - this.MAX_SPEED,
-      // Math.random() * (2 * this.MAX_SPEED) - this.MAX_SPEED
+        xSpeed,
+        0
+        // Math.random() * (2 * this.MAX_SPEED) - this.MAX_SPEED,
+        // Math.random() * (2 * this.MAX_SPEED) - this.MAX_SPEED
     );
 
     this.lastHitBy = xSpeed > 0 ? this.players[0] : this.players[1];
@@ -425,10 +425,10 @@ class Player {
   draw(ctx) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(
-      this.pos.x + this.width / 2,
-      this.pos.y - this.height / 2,
-      this.width,
-      this.height);
+        this.pos.x + this.width / 2,
+        this.pos.y - this.height / 2,
+        this.width,
+        this.height);
   }
 }
 
